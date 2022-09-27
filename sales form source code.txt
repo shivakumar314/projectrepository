@@ -1,0 +1,653 @@
+using System;
+using System.Collections.Generic; using System.ComponentModel; using System.Data;
+using System.Drawing; using System.Linq; using System.Text;
+using System.Windows.Forms; using System.Data.SqlClient;
+
+namespace Dairy_Mng
+{
+public partial class frmSale : Form
+{
+#region Connection obj
+SqlConnection cn = new SqlConnection("Data Source=.\\SQLEXPRESS;AttachDbFilename=D:\\Prj_Oct_2012\\Dairy_Mng\\Dairy_Mng\\d b.mdf;Integrated Security=True;User Instance=True");
+SqlCommand cmd; SqlDataAdapter da; DataTable dt; #endregion
+
+#region gbl obj
+string fAdd = Properties.Settings.Default.Add; string mob = Properties.Settings.Default.Mob; clsUnitConvertor clsUC = new clsUnitConvertor(); TextBox txtName;
+frmMViewer fmv;
+
+ 
+bool edit; #endregion
+
+#region functions public int funMax()
+{
+int max = 0; try
+{
+cn.Open();
+cmd = new SqlCommand("SELECT MAX(RNo) FROM tblRecipt", cn); max = Convert.ToInt32(cmd.ExecuteScalar());
+}
+catch (Exception ex)
+{
+}
+finally
+{
+cn.Close();
+max = max + 1;
+}
+return max;
+}
+public void funInitializedComp()
+{
+txtCName.Text = ""; txtCName.Enabled = true; dgvMList.Enabled = true; txtRNo.Text = ""; dgvMList.Rows.Clear();
+dgvMList.Rows.Add("1", "", "", "", "", "","");
+lblTAMT.Text = "0";
+lblTItm.Text = "0"; flp.Enabled = false; btnPrint.Enabled = false; btnPPV.Enabled = false; btnPSUp.Enabled = false; txtCName.Focus();
+}
+public void funLoadItemsData()
+{
+try
+{
+cn.Open();
+cmd = new SqlCommand("SELECT * FROM tblItmMaster", cn); da = new SqlDataAdapter(cmd);
+dt = new DataTable(); da.Fill(dt);
+for (int i = 0; i < dt.Rows.Count; i++)
+{
+
+txtName.AutoCompleteCustomSource.Add(dt.Rows[i].ItemArray[2].ToString());
+}
+txtName.AutoCompleteCustomSource.Add("End Of List");
+}
+catch (Exception ex)
+{
+MessageBox.Show(ex.Message);
+}
+finally
+{
+cn.Close();
+}
+
+ 
+}
+public void funMngSrno()
+{
+for (int i=0; i < dgvMList.Rows.Count - 1; i++)
+{
+dgvMList.Rows[i].Cells[0].Value = i+1;
+}
+}
+public bool funCheckIsExist(string s, int d)
+{
+bool b = false;
+for (int i = 0; i < dgvMList.Rows.Count - 1; i++)
+{
+if (dgvMList.Rows[i].Cells[1].Value.ToString() == s && d!=i)
+{
+b = true; break;
+}
+}
+return b;
+}
+#endregion
+
+public frmSale()
+{
+txtName = new TextBox(); fmv = new frmMViewer(); InitializeComponent();
+fmv.Location = new Point(dgvMList.Location.X + 100, dgvMList.Location.Y);
+}
+
+private void frmSale_Load(object sender, EventArgs e)
+{
+funInitializedComp(); funLoadItemsData();
+}
+private void frmSale_FormClosing(object sender, FormClosingEventArgs e)
+{
+e.Cancel = false;
+}
+private void txtCName_Leave(object sender, EventArgs e)
+{
+if (string.IsNullOrWhiteSpace(txtCName.Text))
+{
+txtCName.Focus();
+}
+}
+private void dgvMList_EditingControlShowing(object sender, DataGridViewEditingControlShowingEventArgs e)
+{
+TextBox txtACS = e.Control as TextBox; txtACS.AutoCompleteMode = AutoCompleteMode.Suggest;
+txtACS.AutoCompleteSource = AutoCompleteSource.CustomSource; int swt = dgvMList.CurrentCell.ColumnIndex;
+switch (swt)
+{
+case 1:
+txtACS.AutoCompleteCustomSource = txtName.AutoCompleteCustomSource;
+break; case 2:
+txtACS.AutoCompleteCustomSource = null; break;
+
+ 
+case 3:
+txtACS.AutoCompleteCustomSource = null; break;
+case 4:
+txtACS.AutoCompleteCustomSource = null; break;
+case 5:
+txtACS.AutoCompleteCustomSource = null; break;
+case 6:
+txtACS.AutoCompleteCustomSource = null; break;
+default:
+break;
+}
+}
+private void dgvMList_CellBeginEdit(object sender, DataGridViewCellCancelEventArgs e)
+{
+edit = true;
+if (e.ColumnIndex == 1)
+{
+if (fmv.ShowDialog() == DialogResult.OK)
+{
+dgvMList.CurrentRow.Cells[1].Value = fmv.selecteditm;
+}
+}
+}
+private void dgvMList_CellEnter(object sender, DataGridViewCellEventArgs e)
+{
+edit = false;
+}
+private void dgvMList_KeyDown(object sender, KeyEventArgs e)
+{
+if (e.KeyCode == Keys.Enter)
+{
+if (dgvMList.CurrentRow.Cells[6].Selected == true && dgvMList.CurrentRow.Index == dgvMList.Rows.Count - 1 &&
+dgvMList.Rows[dgvMList.Rows.Count - 1].Cells[1].Value.ToString() != "End
+ 
+Of List")
+
+
+
+}
+ 
+
+{
+dgvMList.Rows.Add("", "", "", "", "", "", "");
+dgvMList.CurrentRow.Cells[1].Selected = true;
+}
+ 
+}
+private void dgvMList_RowsAdded(object sender, DataGridViewRowsAddedEventArgs e)
+{
+funMngSrno();
+}
+private void dgvMList_RowsRemoved(object sender, DataGridViewRowsRemovedEventArgs e)
+{
+funMngSrno();
+}
+private void dgvMList_CellValidating(object sender, DataGridViewCellValidatingEventArgs e)
+{
+switch (e.ColumnIndex)
+{
+case 1:
+#region M Name
+
+if  (string.IsNullOrWhiteSpace(e.FormattedValue.ToString()))
+{
+e.Cancel = true;
+}
+else if (txtName.AutoCompleteCustomSource.Contains(e.FormattedValue.ToString()) == false)
+{
+MessageBox.Show("Spelling Error"); e.Cancel = true;
+}
+ 
+
+true)
+ 
+if (funCheckIsExist(e.FormattedValue.ToString(), e.RowIndex) && edit ==
+
+{
+MessageBox.Show("Item Is All Reaady Exist In List"); e.Cancel = true;
+edit = false;
+ 
+}
+
+#endregion break;
+case 2:
+#region quantity
+if (dgvMList.Rows[e.RowIndex].Cells[1].Value.ToString() != "End Of List")
+{
+int i; float f;
+if  (string.IsNullOrWhiteSpace(e.FormattedValue.ToString()))
+{
+e.Cancel = true;
+}
+else if (float.TryParse(e.FormattedValue.ToString(), out f) == false)
+{
+e.Cancel = true;
+MessageBox.Show("Quantity Must Be Neumric", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+if (int.TryParse(e.FormattedValue.ToString(), out i) == false && dgvMList.CurrentRow.Cells[4].Value.ToString() == "Nos" && float.TryParse(e.FormattedValue.ToString(), out f) == true)
+{
+MessageBox.Show("Quantity Can Not Decimal For Unit Nos", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+e.Cancel = true;
+}
+
+}
+#endregion break;
+case 5:
+#region U Price
+if (dgvMList.Rows[e.RowIndex].Cells[1].Value.ToString() != "End Of List")
+{
+float f;
+if  (string.IsNullOrWhiteSpace(e.FormattedValue.ToString()))
+{
+e.Cancel = true;
+}
+else if (float.TryParse(e.FormattedValue.ToString(), out f) == false)
+{
+e.Cancel = true;
+}
+else
+
+ 
+{
+
+}
+}
+#endregion break;
+default:
+break;
+}
+}
+private void dgvMList_CellLeave(object sender, DataGridViewCellEventArgs e)
+{
+int r = e.RowIndex;
+int c = e.ColumnIndex; switch (c)
+{
+case 1:
+#region Menu Name if (edit == true)
+{
+ 
+
+List")
+ 
+if (dgvMList.Rows[e.RowIndex].Cells[1].Value.ToString() != "End Of
+
+{
+try
+{
+ 
+dgvMList.Rows[e.RowIndex].Cells[2].Value = "0"; int iIx =
+txtName.AutoCompleteCustomSource.IndexOf(dgvMList.Rows[e.RowIndex].Cells[1].Val ue.ToString());
+dgvMList.Rows[e.RowIndex].Cells[3].Value = dt.Rows[iIx].ItemArray[5].ToString();
+dgvMList.Rows[e.RowIndex].Cells[4].Value = dt.Rows[iIx].ItemArray[4].ToString();
+dgvMList.Rows[e.RowIndex].Cells[5].Value = dt.Rows[iIx].ItemArray[7].ToString();
+dgvMList.Rows[e.RowIndex].Cells[6].Value = "0";
+}
+catch (Exception ex)
+{
+}
+finally { }
+}
+else
+{
+for (int i = 2; i < 6; i++)
+{
+dgvMList.CurrentRow.Cells[i].Value = "";
+}
+float amt = 0;
+for (int i = 0; i < dgvMList.Rows.Count-1; i++)
+{
+lblTItm.Text = (i+1).ToString(); amt = amt +
+float.Parse(dgvMList.Rows[i].Cells[6].Value.ToString());
+
+}
+lblTAMT.Text = amt.ToString(); flp.Enabled = true; btnCRecipt.Focus();
+}
+}
+#endregion break;
+
+ 
+case 2:
+#region Quantity
+if (dgvMList.Rows[e.RowIndex].Cells[1].Value.ToString() != "End Of List")
+{
+dgvMList.Rows[e.RowIndex].Cells[6].Value = float.Parse(dgvMList.Rows[e.RowIndex].Cells[2].Value.ToString()) *
+
+float.Parse(dgvMList.Rows[e.RowIndex].Cells[3].Value.ToString()) - float.Parse(dgvMList.Rows[e.RowIndex].Cells[2].Value.ToString()) *
+float.Parse(dgvMList.Rows[e.RowIndex].Cells[5].Value.ToString())
+;
+}
+else
+{
+dgvMList.Rows[e.RowIndex].Cells[2].Value = "";
+}
+#endregion break;
+case 5:
+#region Quantity
+if (dgvMList.Rows[e.RowIndex].Cells[1].Value.ToString() != "End Of List")
+{
+dgvMList.Rows[e.RowIndex].Cells[6].Value = float.Parse(dgvMList.Rows[e.RowIndex].Cells[2].Value.ToString()) *
+
+float.Parse(dgvMList.Rows[e.RowIndex].Cells[3].Value.ToString())  -
+float.Parse(dgvMList.Rows[e.RowIndex].Cells[2].Value.ToString()) * float.Parse(dgvMList.Rows[e.RowIndex].Cells[5].Value.ToString())
+;
+}
+else
+{
+dgvMList.Rows[e.RowIndex].Cells[5].Value = "";
+}
+break; #endregion
+default:
+break;
+}
+}
+private void dgvMList_CellValidated(object sender, DataGridViewCellEventArgs e)
+{
+int r = e.RowIndex;
+int c = e.ColumnIndex; switch (c)
+{
+case 1:
+#region Menu Name if (edit == true)
+{
+ 
+
+List")
+ 
+if (dgvMList.Rows[e.RowIndex].Cells[1].Value.ToString() != "End Of
+
+{
+dgvMList.Rows[e.RowIndex].Cells[2].Value = "0"; int iIx =
+ 
+txtName.AutoCompleteCustomSource.IndexOf(dgvMList.Rows[e.RowIndex].Cells[1].Val ue.ToString());
+
+ 
+dgvMList.Rows[e.RowIndex].Cells[3].Value = dt.Rows[iIx].ItemArray[5].ToString();
+dgvMList.Rows[e.RowIndex].Cells[4].Value = dt.Rows[iIx].ItemArray[4].ToString();
+dgvMList.Rows[e.RowIndex].Cells[5].Value = dt.Rows[iIx].ItemArray[7].ToString();
+dgvMList.Rows[e.RowIndex].Cells[6].Value = "0";
+}
+else
+{
+for (int i = 2; i < 6; i++)
+{
+dgvMList.CurrentRow.Cells[i].Value = "";
+}
+float amt=0;
+for (int i = 0; i < dgvMList.Rows.Count-1; i++)
+{
+lblTItm.Text = (i+1).ToString(); amt = amt +
+float.Parse(dgvMList.Rows[i].Cells[6].Value.ToString());
+
+}
+lblTAMT.Text = amt.ToString(); flp.Enabled = true; btnCRecipt.Focus();
+}
+}
+#endregion break;
+case 2:
+#region Quantity
+if (dgvMList.Rows[e.RowIndex].Cells[1].Value.ToString() != "End Of List")
+{
+dgvMList.Rows[e.RowIndex].Cells[6].Value = float.Parse(dgvMList.Rows[e.RowIndex].Cells[2].Value.ToString()) *
+
+float.Parse(dgvMList.Rows[e.RowIndex].Cells[3].Value.ToString())  -
+float.Parse(dgvMList.Rows[e.RowIndex].Cells[2].Value.ToString()) * float.Parse(dgvMList.Rows[e.RowIndex].Cells[5].Value.ToString())
+;
+}
+else
+{
+dgvMList.Rows[e.RowIndex].Cells[2].Value = "";
+}
+#endregion break;
+case 5:
+#region Quantity
+if (dgvMList.Rows[e.RowIndex].Cells[1].Value.ToString() != "End Of List")
+{
+dgvMList.Rows[e.RowIndex].Cells[6].Value = float.Parse(dgvMList.Rows[e.RowIndex].Cells[2].Value.ToString()) *
+
+float.Parse(dgvMList.Rows[e.RowIndex].Cells[3].Value.ToString()) - float.Parse(dgvMList.Rows[e.RowIndex].Cells[2].Value.ToString()) *
+float.Parse(dgvMList.Rows[e.RowIndex].Cells[5].Value.ToString())
+;
+
+ 
+}
+else
+{
+dgvMList.Rows[e.RowIndex].Cells[5].Value = "";
+}
+break; #endregion
+default:
+break;
+}
+}
+private void btnCRecipt_Click(object sender, EventArgs e)
+{
+if (btnCRecipt.Text == "Creat Receipt")
+{
+if (MessageBox.Show("Are You Sure To Creat Recipt?", "Confirmation", MessageBoxButtons.YesNo) == DialogResult.Yes)
+{
+int max = funMax(); txtRNo.Text = max.ToString(); #region recipt basic
+try
+{
+cn.Open();
+cmd = new SqlCommand("INSERT INTO tblRecipt (RNo, C_Name, Date, TItem, tamt) VALUES (@no,@nm,@dt,@titm,@amt)", cn);
+cmd.Parameters.Add("@no", SqlDbType.Int).Value = max; cmd.Parameters.Add("@nm", SqlDbType.VarChar).Value =
+txtCName.Text;
+cmd.Parameters.Add("@dt", SqlDbType.Date).Value = dtp.Value; cmd.Parameters.Add("@titm", SqlDbType.Int).Value =
+int.Parse(lblTItm.Text);
+cmd.Parameters.Add("@amt", SqlDbType.Float).Value = float.Parse(lblTAMT.Text);
+cmd.ExecuteReader();
+}
+catch (Exception ex)
+{
+MessageBox.Show(ex.Message);
+}
+finally
+{
+cn.Close();
+}
+#endregion #region details try
+{
+for (int i = 0; i < dgvMList.Rows.Count - 1; i++)
+{
+cmd = new SqlCommand("INSERT INTO tblRDetails (R_No, IName, Quantity, UPrice, Unit, disc, amt) VALUES (@no,@nm,@qt,@up,@u,@disc,@amt)", cn);
+cn.Open();
+cmd.Parameters.Add("@no", SqlDbType.Int).Value = max; cmd.Parameters.Add("@nm", SqlDbType.VarChar).Value =
+dgvMList.Rows[i].Cells[1].Value.ToString();
+cmd.Parameters.Add("@qt", SqlDbType.Float).Value = float.Parse(dgvMList.Rows[i].Cells[2].Value.ToString());
+cmd.Parameters.Add("@up", SqlDbType.VarChar).Value = dgvMList.Rows[i].Cells[3].Value.ToString();
+cmd.Parameters.Add("@u", SqlDbType.VarChar).Value = dgvMList.Rows[i].Cells[4].Value.ToString();
+
+ 
+cmd.Parameters.Add("@disc", SqlDbType.Float).Value = float.Parse(dgvMList.Rows[i].Cells[5].Value.ToString());
+cmd.Parameters.Add("@amt", SqlDbType.Float).Value = float.Parse(dgvMList.Rows[i].Cells[6].Value.ToString());
+cmd.ExecuteReader(); cn.Close();
+}
+}
+catch (Exception ex)
+{
+MessageBox.Show(ex.Message);
+}
+finally
+{
+}
+#endregion
+#region Update Item stock try
+{
+for (int i = 0; i < dgvMList.Rows.Count - 1; i++)
+{
+cmd = new SqlCommand("UPDATE tblItmMaster SET I_Quantity = I_Quantity - @qt WHERE (I_Name = @nm)", cn);
+cn.Open();
+cmd.Parameters.Add("@qt", SqlDbType.Float).Value = float.Parse(dgvMList.Rows[i].Cells[2].Value.ToString());
+cmd.Parameters.Add("@nm", SqlDbType.VarChar).Value = dgvMList.Rows[i].Cells[1].Value.ToString();
+cmd.ExecuteReader(); cn.Close();
+}
+MessageBox.Show("Recipt Added Successfully. \n" + "Recipt No: " + (max).ToString());
+btnPrint.Enabled = true; btnPPV.Enabled = true; btnPSUp.Enabled = true; txtCName.Enabled = false; dgvMList.Enabled = false; btnCRecipt.Text = "New Receipt";
+}
+catch (Exception ex)
+{
+MessageBox.Show(ex.Message);
+}
+finally
+{
+}
+#endregion
+
+}
+}
+else
+{
+funInitializedComp();
+}
+}
+private void btnPrint_Click(object sender, EventArgs e)
+{
+pDoc.Print();
+}
+private void btnPPV_Click(object sender, EventArgs e)
+{
+ppViewD.ShowDialog();
+
+ 
+}
+private void btnPSUp_Click(object sender, EventArgs e)
+{
+pSetUp.ShowDialog();
+}
+private void pDoc_PrintPage(object sender, System.Drawing.Printing.PrintPageEventArgs e)
+{
+
+int pWidth = pSetUp.PageSettings.PaperSize.Width - 10; int pHeight = pSetUp.PageSettings.PaperSize.Height; #region Font
+Font fName = new System.Drawing.Font("Arial Black", 30, FontStyle.Bold); Font ffAdd = new System.Drawing.Font("Arial", 14, FontStyle.Bold);
+Font ffListH= new System.Drawing.Font("Arial", 11, FontStyle.Bold); #endregion
+
+#region header
+e.Graphics.DrawString("BAKE-WELL", fName, System.Drawing.Brushes.Blue, (pWidth / 2) - 105, 25);
+e.Graphics.DrawString(fAdd, ffAdd, System.Drawing.Brushes.Black, pWidth - fAdd.Length * 11, 80);
+e.Graphics.DrawString(mob, ffAdd, System.Drawing.Brushes.Black, pWidth - mob.Length * 14, 100);
+e.Graphics.DrawLine(Pens.Blue, 10, 130, pWidth - 10, 130); #endregion
+#region recipt Details
+e.Graphics.DrawString("Recipt No: " + txtRNo.Text, ffAdd, System.Drawing.Brushes.Black, 20, 155);
+e.Graphics.DrawString("Date: " + dtp.Text, ffAdd, System.Drawing.Brushes.Black, pWidth - mob.Length * 14, 155);
+e.Graphics.DrawString("Customer Name:" + txtCName.Text, ffAdd, System.Drawing.Brushes.Black, 20, 190);
+e.Graphics.DrawString("Menu List:", ffListH, System.Drawing.Brushes.Blue, 20,
+ 
+245);
+ 
+
+#endregion #region Menu List
+Rectangle MHeader = new Rectangle(20, 285, pWidth - 40, 35); Rectangle SrNo = new Rectangle(20, 285, 80, 35);
+Rectangle IName = new Rectangle(100, 285, 250, 35);
+Rectangle Q = new Rectangle(350, 285, 100, 35);
+Rectangle uP = new Rectangle(450, 285, 100, 35);
+Rectangle u = new Rectangle(550, 285, 60, 35);
+Rectangle dis = new Rectangle(610, 285, 100, 35);
+Rectangle amt = new Rectangle(710, 285, 110, 35); e.Graphics.FillRectangle(Brushes.LightBlue, MHeader);
+
+Font fmHeader = new System.Drawing.Font("Arial", 11, FontStyle.Bold); StringFormat sf = new StringFormat();
+sf.Alignment = StringAlignment.Center; e.Graphics.DrawRectangle(Pens.Blue, SrNo); e.Graphics.DrawRectangle(Pens.Blue, IName); e.Graphics.DrawRectangle(Pens.Blue, Q); e.Graphics.DrawRectangle(Pens.Blue, u); e.Graphics.DrawRectangle(Pens.Blue, uP); e.Graphics.DrawRectangle(Pens.Blue, dis); e.Graphics.DrawRectangle(Pens.Blue, amt);
+
+e.Graphics.DrawString("Sr No", fmHeader, System.Drawing.Brushes.Blue,
+ 
+SrNo, sf);
+e.Graphics.DrawString("Item Name", fmHeader, System.Drawing.Brushes.Blue, IName, sf);
+
+ 
+
+Q, sf);
+
+sf);
+ 
+e.Graphics.DrawString("Quantity", fmHeader, System.Drawing.Brushes.Blue,
+
+e.Graphics.DrawString("Unit", fmHeader, System.Drawing.Brushes.Blue, u, sf); e.Graphics.DrawString("Rs/Unit", fmHeader, System.Drawing.Brushes.Blue, uP,
+
+e.Graphics.DrawString("Disc.(Rs)/Item", fmHeader,
+ 
+System.Drawing.Brushes.Blue, dis, sf);
+e.Graphics.DrawString("Total AMT", fmHeader, System.Drawing.Brushes.Blue, amt, sf);
+#endregion
+
+#region Menu List Item SrNo.Height = 30;
+IName.Height = 30;
+Q.Height = 30;
+uP.Height = 30;
+u.Height = 30;
+dis.Height = 30;
+amt.Height = 30;
+Font fitm = new System.Drawing.Font("Arial", 10, FontStyle.Regular); sf.LineAlignment = StringAlignment.Center;
+int y = 320;
+for (int i = 0; i < dgvMList.Rows.Count - 1; i++)
+{
+SrNo.Y = y; IName.Y = y;
+Q.Y = y;
+u.Y = y; uP.Y = y; dis.Y = y; amt.Y = y;
+e.Graphics.DrawRectangle(Pens.Black, SrNo); e.Graphics.DrawRectangle(Pens.Black, IName); e.Graphics.DrawRectangle(Pens.Black, Q); e.Graphics.DrawRectangle(Pens.Black, u); e.Graphics.DrawRectangle(Pens.Black, uP); e.Graphics.DrawRectangle(Pens.Black, dis); e.Graphics.DrawRectangle(Pens.Black, amt);
+
+e.Graphics.DrawString((i + 1).ToString(), fitm, Brushes.Black, SrNo, sf); e.Graphics.DrawString(dgvMList.Rows[i].Cells[1].Value.ToString(), fitm,
+Brushes.Black, IName, sf);
+e.Graphics.DrawString(dgvMList.Rows[i].Cells[2].Value.ToString(), fitm, Brushes.Black, Q, sf);
+e.Graphics.DrawString(dgvMList.Rows[i].Cells[3].Value.ToString(), fitm, Brushes.Black, uP, sf);
+e.Graphics.DrawString(dgvMList.Rows[i].Cells[4].Value.ToString(), fitm, Brushes.Black, u, sf);
+e.Graphics.DrawString(dgvMList.Rows[i].Cells[5].Value.ToString(), fitm, Brushes.Black, dis, sf);
+e.Graphics.DrawString(dgvMList.Rows[i].Cells[6].Value.ToString(), fitm, Brushes.Black, amt, sf);
+
+y += 30;
+}
+#endregion #region total Menu
+e.Graphics.DrawString("Total :", fmHeader, System.Drawing.Brushes.Blue, 20, y + 15);
+y = y + 40;
+MHeader.Y = y;
+sf.LineAlignment = StringAlignment.Center;
+
+ 
+
+
+
+
+
+TI, sf);
+ 
+Rectangle TI = new Rectangle(20, y, 150, 35); Rectangle blank = new Rectangle(170, y, 430, 35); Rectangle TAMT = new Rectangle(710, y, 110, 35); e.Graphics.FillRectangle(Brushes.LightPink, MHeader); e.Graphics.DrawRectangle(Pens.Red, MHeader);
+e.Graphics.DrawString("Total Item", fmHeader, System.Drawing.Brushes.Blue,
+
+e.Graphics.DrawString("", fmHeader, System.Drawing.Brushes.Blue, blank, sf); e.Graphics.DrawString("Total AMT", fmHeader, System.Drawing.Brushes.Blue,
+ 
+TAMT, sf);
+sf.LineAlignment = StringAlignment.Center; y = y + 35;
+TI.Y = y; TAMT.Y = y;
+MHeader.Y = y;
+
+e.Graphics.FillRectangle(Brushes.LightBlue, MHeader); e.Graphics.DrawRectangle(Pens.Red, MHeader); e.Graphics.DrawString((dgvMList.Rows.Count - 1).ToString(), fmHeader,
+System.Drawing.Brushes.Black, TI, sf);
+e.Graphics.DrawString(lblTAMT.Text, fmHeader, System.Drawing.Brushes.Black, TAMT, sf);
+
+#endregion #region Footer
+e.Graphics.DrawString("Sign & Stamp Here", fmHeader, System.Drawing.Brushes.Black, 600, y + 60);
+#endregion
+}
+
+
+
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
